@@ -1,4 +1,4 @@
-# icp_rust_message_board_contract
+# icp_rust_blog_contract
 
 ### Requirements
 
