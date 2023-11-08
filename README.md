@@ -1,4 +1,8 @@
 # icp_rust_blog_contract
+This project is built with ICP RUST CDK
+It is blog smart contract working on local canister
+You can create a blog post read it delete it like it or dislike it also you can update it. 
+All CRUD operation works
 
 ### Requirements
 
@@ -49,20 +53,6 @@ ic-cdk = "0.11.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 ic-stable-structures = { git = "https://github.com/lwshang/stable-structures.git", branch = "lwshang/update_cdk"}
-```
-
-## did autogenerate
-
-Add this script to the root directory of the project:
-
-```
-https://github.com/buildwithjuno/juno/blob/main/scripts/did.sh
-```
-
-Update line 16 with the name of your canister:
-
-```
-https://github.com/buildwithjuno/juno/blob/main/scripts/did.sh#L16
 ```
 
 After this run this script to generate Candid.
