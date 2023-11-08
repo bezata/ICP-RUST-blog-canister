@@ -66,13 +66,8 @@ struct BlogPostPayload {
 
 // Query function to get a blog post by ID
 #[ic_cdk::query]
-fn get_blog_post(id: u64) -> Result<BlogPost, Error> {
-    match _get_blog_post(&id) {
-        Some(blog_post) => Ok(blog_post),
-        None => Err(Error::NotFound {
-            msg: format!("Blog post with id={} not found", id),
-        }),
-    }
+fn get_blog_post(id: u64) -> Option<BlogPost> {
+    _get_blog_post(&id)
 }
 
 // Update function to create a new blog post
@@ -81,8 +76,11 @@ fn create_blog_post(payload: BlogPostPayload) -> Option<BlogPost> {
     // Generate a new unique ID for the blog post
     let id = ID_COUNTER
         .with(|counter| {
-            let current_value = *counter.borrow().get();
-            counter.borrow_mut().set(current_value + 1)
+            let mut current_value = *counter.borrow().get();
+            while BLOG_POSTS.with(|service| service.borrow().contains_key(&current_value)) {
+                current_value += 1;
+            }
+            *counter.borrow_mut().set(current_value)
         })
         .expect("Cannot increment id counter");
 
@@ -106,79 +104,62 @@ fn create_blog_post(payload: BlogPostPayload) -> Option<BlogPost> {
 
 // Update function to update an existing blog post
 #[ic_cdk::update]
-fn update_blog_post(id: u64, payload: BlogPostPayload) -> Result<BlogPost, Error> {
+fn update_blog_post(id: u64, payload: BlogPostPayload) -> Option<BlogPost> {
     match BLOG_POSTS.with(|service| service.borrow().get(&id)) {
         Some(mut blog_post) => {
             // Update the blog post fields with the new payload
             blog_post.title = payload.title;
             blog_post.content = payload.content;
             blog_post.author = payload.author;
-            blog_post.updated_at = Some(time()); // Set the update timestamp
+            let updated_at = time(); // Set the update timestamp
+            if updated_at > blog_post.created_at {
+                blog_post.updated_at = Some(updated_at);
+            }
             do_insert(&blog_post); // Update the blog post in the data store
-            Ok(blog_post)
+            Some(blog_post)
         }
-        None => Err(Error::NotFound {
-            msg: format!(
-                "Blog post with id={} not found. Cannot update.",
-                id
-            ),
-        }),
+        None => None,
     }
 }
 
 // Update function to delete a blog post by ID
 #[ic_cdk::update]
-fn delete_blog_post(id: u64) -> Result<BlogPost, Error> {
+fn delete_blog_post(id: u64) -> Option<BlogPost> {
     match BLOG_POSTS.with(|service| service.borrow_mut().remove(&id)) {
-        Some(blog_post) => Ok(blog_post),
-        None => Err(Error::NotFound {
-            msg: format!(
-                "Blog post with id={} not found. Cannot delete.",
-                id
-            ),
-        }),
+        Some(blog_post) => Some(blog_post),
+        None => None,
     }
 }
 
 // Update function to increment the "likes" count of a blog post
 #[ic_cdk::update]
-fn like_blog_post(id: u64) -> Result<BlogPost, Error> {
+fn like_blog_post(id: u64) -> Option<BlogPost> {
     match BLOG_POSTS.with(|service| service.borrow().get(&id)) {
         Some(mut blog_post) => {
-            blog_post.likes += 1;
+            blog_post.likes = blog_post.likes.saturating_add(1);
             do_insert(&blog_post); // Update the blog post in the data store
-            Ok(blog_post.clone())
+            Some(blog_post.clone())
         }
-        None => Err(Error::NotFound {
-            msg: format!(
-                "Blog post with id={} not found. Cannot like.",
-                id
-            ),
-        }),
+        None => None,
     }
 }
 
 // Update function to decrement the "likes" count of a blog post
 #[ic_cdk::update]
-fn dislike_blog_post(id: u64) -> Result<BlogPost, Error> {
+fn dislike_blog_post(id: u64) -> Option<BlogPost> {
     match BLOG_POSTS.with(|service| service.borrow().get(&id)) {
         Some(mut blog_post) => {
-            blog_post.likes -= 1;
+            blog_post.likes = blog_post.likes.saturating_sub(1);
             do_insert(&blog_post); // Update the blog post in the data store
-            Ok(blog_post.clone())
+            Some(blog_post.clone())
         }
-        None => Err(Error::NotFound {
-            msg: format!(
-                "Blog post with id={} not found. Cannot dislike.",
-                id
-            ),
-        }),
+        None => None,
     }
 }
 
 // Define an enum to represent errors, specifically "Not Found" errors
 #[derive(candid::CandidType, Deserialize, Serialize)]
-enum Error {
+enum BlogPostError {
     NotFound { msg: String },
 }
 
