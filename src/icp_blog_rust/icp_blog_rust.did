@@ -1,0 +1,26 @@
+type BlogPost = record {
+  id : nat64;
+  categories : vec text;
+  title : text;
+  updated_at : opt nat64;
+  content : text;
+  created_at : nat64;
+  author : text;
+  likes : nat32;
+};
+type BlogPostPayload = record {
+  categories : vec text;
+  title : text;
+  content : text;
+  author : text;
+};
+type Error = variant { NotFound : record { msg : text } };
+type Result = variant { Ok : BlogPost; Err : Error };
+service : {
+  create_blog_post : (BlogPostPayload) -> (opt BlogPost);
+  delete_blog_post : (nat64) -> (Result);
+  dislike_blog_post : (nat64) -> (Result);
+  get_blog_post : (nat64) -> (Result) query;
+  like_blog_post : (nat64) -> (Result);
+  update_blog_post : (nat64, BlogPostPayload) -> (Result);
+}

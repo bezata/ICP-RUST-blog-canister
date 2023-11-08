@@ -1,5 +1,5 @@
 [package]
-name = "icp_rust_boilerplate_backend"
+name = "icp_blog_rust"
 version = "0.1.0"
 edition = "2021"
 
