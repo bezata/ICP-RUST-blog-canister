@@ -6,18 +6,27 @@ type BlogPost = record {
   content : text;
   created_at : nat64;
   author : text;
+  liked : vec principal;
   likes : nat32;
 };
 type BlogPostPayload = record {
   categories : vec text;
   title : text;
   content : text;
-  author : text;
 };
-type Error = variant { NotFound : record { msg : text } };
+type Error = variant {
+  AlreadyLiked : record { msg : text };
+  MinLikes : record { msg : text };
+  NotFound : record { msg : text };
+  ValidationErrors : record { errors : text };
+  NotAuthorized : record { msg : text };
+  HasLikes : record { msg : text };
+  NotLiked : record { msg : text };
+  MaxLikes : record { msg : text };
+};
 type Result = variant { Ok : BlogPost; Err : Error };
 service : {
-  create_blog_post : (BlogPostPayload) -> (opt BlogPost);
+  create_blog_post : (BlogPostPayload) -> (Result);
   delete_blog_post : (nat64) -> (Result);
   dislike_blog_post : (nat64) -> (Result);
   get_blog_post : (nat64) -> (Result) query;
