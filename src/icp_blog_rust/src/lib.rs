@@ -82,16 +82,15 @@ fn get_blog_post(id: u64) -> Result<BlogPost, Error> {
 // Update function to create a new blog post
 #[ic_cdk::update]
 fn create_blog_post(payload: BlogPostPayload) -> Result<BlogPost, Error> {
+    let check_payload = payload.validate();
+    if check_payload.is_err(){
+        return Err(Error::ValidationErrors { errors:  check_payload.err().unwrap().to_string()})
+    }
     let id = generate_unique_id();
     let liked: Vec<Principal> = Vec::new(); // initializes an empty Vec for the liked field
 
-    let check_payload = payload.validate();
-    
     if id.is_none() {
         return Err(Error::NotFound{msg: "lol".to_string()})
-    }
-    if check_payload.is_err(){
-        return Err(Error::ValidationErrors { errors:  check_payload.err().unwrap().to_string()})
     }
     let blog_post = BlogPost {
         id: id.unwrap(),
